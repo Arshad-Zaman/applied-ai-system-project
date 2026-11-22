@@ -1,15 +1,80 @@
 classDiagram
-    %% Replace the placeholders below with your actual classes, attributes, methods, and relationships.
-    %% Keep this file updated so it matches your final implementation.
+    %% Class structure of PawPal+. Matches pawpal_system.py, verifier.py, guardrails.py.
 
-    class ClassName {
-        +type attribute
-        +method() returnType
+    class Task {
+        +str title
+        +int duration_min
+        +str priority
+        +str pet_name
     }
 
-    class AnotherClass {
-        +type attribute
-        +method() returnType
+    class Pet {
+        +str name
+        +str species
+        +list~Task~ tasks
+        +add_task(task) None
     }
 
-    ClassName --> AnotherClass : relationship
+    class Owner {
+        +str name
+        +int available_min
+        +list~Pet~ pets
+        +add_pet(pet) None
+        +all_tasks() list~Task~
+    }
+
+    class Plan {
+        +list~Task~ scheduled
+        +list~Task~ skipped
+        +list~str~ explanation
+        +float confidence
+        +list~Issue~ issues
+        +int rounds
+        +list~str~ warnings
+        +str error
+        +total_min() int
+        +needs_review() bool
+    }
+
+    class Scheduler {
+        +build_plan(owner) Plan
+        +build_plan_checked(owner, max_rounds) Plan
+        +check_and_repair(plan, owner, max_rounds) Plan
+        +plan_safely(owner) Plan
+    }
+
+    class Issue {
+        +str severity
+        +str code
+        +str message
+    }
+
+    class ValidationResult {
+        +Owner owner
+        +list~str~ warnings
+        +list~str~ blocking
+        +ok() bool
+    }
+
+    class verifier {
+        <<module>>
+        +verify(plan, owner) list~Issue~
+        +confidence_score(issues, rounds) float
+    }
+
+    class guardrails {
+        <<module>>
+        +validate_owner(owner) ValidationResult
+    }
+
+    Owner "1" o-- "*" Pet : has
+    Pet "1" o-- "*" Task : has
+    Scheduler ..> Owner : plans for
+    Scheduler ..> Plan : produces
+    Scheduler ..> verifier : checks plan with
+    Scheduler ..> guardrails : validates input with
+    Plan "1" o-- "*" Issue : issues
+    Plan "1" o-- "*" Task : scheduled / skipped
+    verifier ..> Issue : creates
+    guardrails ..> ValidationResult : returns
+    ValidationResult --> Owner : cleaned copy

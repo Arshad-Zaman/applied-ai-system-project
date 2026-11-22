@@ -1,0 +1,34 @@
+flowchart TD
+    %% PawPal+ system architecture. Matches the implementation in app.py,
+    %% pawpal_system.py, guardrails.py, verifier.py, logging_setup.py, eval.py.
+
+    User([Pet owner]) -->|owner, pets, tasks, available minutes| UI[Streamlit UI<br/>app.py]
+    UI -->|Generate plan| Safe[Scheduler.plan_safely<br/>pawpal_system.py]
+
+    Safe --> Guard{Input guardrails<br/>guardrails.py<br/>validate_owner on a copy}
+    Guard -->|owner-level problem:<br/>no time, no pets, no valid tasks| Err[Error plan<br/>confidence 0.0]
+    Guard -->|cleaned owner +<br/>fixed / rejected warnings| Sched[Scheduler.build_plan<br/>priority, then duration<br/>greedy fit into available time]
+
+    Sched --> Verify{Verifier<br/>verifier.py<br/>budget, duplicates,<br/>priority inversion,<br/>utilization}
+    Verify -->|errors found<br/>and rounds left, max 3| Repair[Repair<br/>remove duplicates<br/>drop lowest priority<br/>swap in high priority]
+    Repair --> Verify
+    Verify -->|no errors, or rounds exhausted| Score[Confidence score 0 to 1<br/>penalties: errors, warnings,<br/>repair rounds, fixed inputs]
+
+    Safe -.->|unexpected exception| Err
+    Score --> Plan[Plan<br/>scheduled, skipped, explanation,<br/>issues, warnings, confidence]
+    Err --> UI
+    Plan --> UI
+
+    UI --> Review{Confidence below 0.7?}
+    Review -->|yes: review banner| Human[Human in the loop<br/>owner reviews plan]
+    Review -->|no| Human
+    Human -->|Accept plan| Done([Plan accepted])
+    Human -->|Edit tasks| UI
+
+    Eval[eval.py<br/>8 scenarios] -.->|exercises| Safe
+    Tests[pytest<br/>19 tests] -.->|exercises| Safe
+    Log[(pawpal.log<br/>logging_setup.py)]
+    Guard -.-> Log
+    Repair -.-> Log
+    Score -.-> Log
+    Human -.-> Log
