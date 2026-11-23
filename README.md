@@ -40,7 +40,7 @@ Data flows in this order:
 ## Setup Instructions
 
 ```bash
-git clone <this-repo-url>
+git clone https://github.com/Arshad-Zaman/applied-ai-system-project.git
 cd applied-ai-system-project
 python -m venv .venv
 source .venv/bin/activate        # Windows PowerShell: .\.venv\Scripts\Activate.ps1
@@ -177,7 +177,3 @@ One honest note: scenarios 4 and 5 use plans I built by hand to contain mistakes
 ## Reflection
 
 This project taught me that making an AI system trustworthy is mostly about what happens around the part that makes the decision. The planner itself is simple, but the guardrails, the self-check and the confidence score are what let someone else decide how much to rely on it. The responsible-AI reflection (limitations, misuse, and how I worked with AI) is in [model_card.md](model_card.md).
-
-## Demo Video
-
-Optional Loom walkthrough: <!-- add link here if you record one -->
