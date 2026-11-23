@@ -59,15 +59,22 @@ No API key is needed. Everything runs locally.
 
 ## Sample Interactions
 
-These were produced by running the real code (`Scheduler().plan_safely(owner)`). The owner is Jordan and the pet is Mochi.
+Run this command to reproduce all three examples below:
+
+```bash
+python demo.py
+```
+
+The output below is copied from that command. The owner is Jordan and the pet is Mochi. Guardrail warnings also go to `pawpal.log`.
 
 ### Run 1: Normal day
 
 Input: 90 minutes available, 5 tasks.
 
 ```
-Tasks: Morning walk (30m, high), Feed breakfast (10m, high), Give medication (5m, high),
-       Grooming (40m, low), Fetch in the yard (25m, medium)
+=== Run 1: normal day ===
+Available: 90 min
+Tasks:     Morning walk (30m, high), Feed breakfast (10m, high), Give medication (5m, high), Grooming (40m, low), Fetch in the yard (25m, medium)
 
 Time used: 70/90 min | Confidence: 1.00 | Repairs: 0 | Needs review: False
 Scheduled: Give medication, Feed breakfast, Morning walk, Fetch in the yard
@@ -86,12 +93,16 @@ All the high-priority tasks fit, and the low-priority task was the one skipped, 
 Input: 30 minutes available, including a 90 minute vet visit.
 
 ```
-Tasks: Vet visit (90m, high), Feed breakfast (10m, high), Grooming (15m, low)
+=== Run 2: a high-priority task that cannot fit ===
+Available: 30 min
+Tasks:     Vet visit (90m, high), Feed breakfast (10m, high), Grooming (15m, low)
 
 Time used: 25/30 min | Confidence: 0.90 | Repairs: 0 | Needs review: False
 Scheduled: Feed breakfast, Grooming
 Skipped:   Vet visit (90m, high)
+  - Scheduled 'Feed breakfast' (Mochi, high priority, 10 min).
   - Skipped 'Vet visit' (Mochi, high priority): needs 90 min but only 20 min left.
+  - Scheduled 'Grooming' (Mochi, low priority, 15 min).
   issue: [warning] skipped_high: High-priority 'Vet visit' (Mochi) was skipped for lack of time.
 ```
 
@@ -102,11 +113,15 @@ The vet visit can't fit even if everything else is removed, so the verifier call
 Input: 60 minutes available, with an empty title, a negative duration, an unknown priority, a duplicate and a 600 minute task.
 
 ```
-Tasks: Morning walk (30m, high), "" (10m), Nap (-5m), Feed breakfast (10m, "URGENT"),
-       morning walk (15m, low), Hike (600m)
+=== Run 3: messy input ===
+Available: 60 min
+Tasks:     Morning walk (30m, high), (no title) (10m, low), Nap (-5m, low), Feed breakfast (10m, urgent), morning walk (15m, low), Hike (600m, low)
 
 Time used: 40/60 min | Confidence: 0.75 | Repairs: 0 | Needs review: False
-Scheduled: Morning walk, Feed breakfast (priority fixed to medium)
+Scheduled: Morning walk, Feed breakfast
+Skipped:   -
+  - Scheduled 'Morning walk' (Mochi, high priority, 30 min).
+  - Scheduled 'Feed breakfast' (Mochi, medium priority, 10 min).
   guardrail: Rejected a task on Mochi: empty title.
   guardrail: Rejected 'Nap' (Mochi): duration must be a positive whole number (got -5).
   guardrail: Fixed 'Feed breakfast' (Mochi): unknown priority 'urgent', set to 'medium'.
@@ -114,7 +129,7 @@ Scheduled: Morning walk, Feed breakfast (priority fixed to medium)
   guardrail: Rejected 'Hike' (Mochi): 600 min exceeds the 480 min limit.
 ```
 
-The plan still gets built from the valid tasks. Each fixed or rejected input costs 0.05 confidence, so 5 of them took the score from 1.00 to 0.75.
+The plan still gets built from the valid tasks, and "urgent" was fixed to medium priority. Each fixed or rejected input costs 0.05 confidence, so 5 of them took the score from 1.00 to 0.75.
 
 ### Log excerpt (`pawpal.log`)
 
